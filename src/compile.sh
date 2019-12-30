@@ -1,1 +1,0 @@
-nvcc common.cu haar.cu nonseparable.cu separable.cu utils.cu wt.cu filters.cpp io.cpp pdwt.cpp -lcublas -shared -o libpdwt.so -Xcompiler -fPIC

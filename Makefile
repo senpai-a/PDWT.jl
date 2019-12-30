@@ -1,9 +1,9 @@
 NVCC=nvcc
-CFLAGS="-arch=sm_30"
+#CFLAGS="-arch=sm_30"
 LDFLAGS=-lcublas
 
-PDWTCORE=src/wt.cu src/common.cu src/utils.cu src/separable.cu src/nonseparable.cu src/haar.cu src/filters.cpp
-PDWTOBJ=build/wt.o build/common.o build/utils.o build/separable.o build/nonseparable.o build/haar.o build/filters.o
+PDWTCORE=src/wt.cu src/common.cu src/utils.cu src/separable.cu src/nonseparable.cu src/haar.cu src/filters.cpp src/pdwt.cpp
+PDWTOBJ=build/wt.o build/common.o build/utils.o build/separable.o build/nonseparable.o build/haar.o build/filters.o build/pdwt.o
 
 #
 # Using constant memory accross several files requires to use separate compilation (relocatable device code),
@@ -20,11 +20,6 @@ PDWTOBJ=build/wt.o build/common.o build/utils.o build/separable.o build/nonsepar
 #   - replace "-c $^" with "-dc $^" in the Makefile targets rules
 #   - uncomment the definition of SEPARATE_COMPILATION in filters.h
 #
-demo: $(PDWTCORE) src/demo.cpp src/io.cpp
-	mkdir -p build
-	$(NVCC) -g $(CFLAGS) -odir build -c $^
-	$(NVCC) $(CFLAGS) -o demo $(PDWTOBJ) build/demo.o build/io.o $(LDFLAGS)
-
 
 libpdwt.so: $(PDWTCORE)
 	mkdir -p build
@@ -37,8 +32,6 @@ libpdwtd.so: $(PDWTCORE)
 	mkdir -p build
 	$(NVCC) --ptxas-options=-v --compiler-options '-fPIC' -DDOUBLEPRECISION -odir build -c $^
 	$(NVCC) $(CFLAGS)  -o $@ --shared $(PDWTOBJ) $(LDFLAGS)
-
-
 
 clean:
 	rm -rf build demo libpdwt*.so
