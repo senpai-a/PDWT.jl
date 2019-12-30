@@ -87,7 +87,7 @@ Wavelets::Wavelets(
     int Nc,
     const char* wname,
     int levels,
-    int memisonhost,
+    int mem_on_device,
     int do_separable,
     int do_cycle_spinning,
     int do_swt,
@@ -118,10 +118,9 @@ Wavelets::Wavelets(
     cudaMalloc(&d_arr_in, Nr*Nc*sizeof(DTYPE));
     if (!img) cudaMemset(d_arr_in, 0, Nr*Nc*sizeof(DTYPE));
     else {
-        cudaMemcpyKind transfer;
-        if (memisonhost) transfer = cudaMemcpyHostToDevice;
-        else transfer = cudaMemcpyDeviceToDevice;
-        cudaMemcpy(d_arr_in, img, Nr*Nc*sizeof(DTYPE), transfer);
+        cudaMemcpyKind copykind = mem_on_device ?
+            cudaMemcpyDeviceToDevice : cudaMemcpyHostToDevice;
+        cudaMemcpy(d_arr_in, img, Nr*Nc*sizeof(DTYPE), copykind);
     }
     d_image = d_arr_in;
 
@@ -419,26 +418,23 @@ DTYPE Wavelets::norm1(void) {
 
 /// Method : get the image from device
 int Wavelets::get_image(DTYPE* res,int to_device) { // TODO: more defensive
-    cudaMemcpyKind copykind = to_device ? cudaMemcpyDeviceToDevice : cudaMemcpyDeviceToHost;
+    cudaMemcpyKind copykind = to_device ?
+        cudaMemcpyDeviceToDevice : cudaMemcpyDeviceToHost;
     cudaMemcpy(res, d_image, winfos.Nr*winfos.Nc*sizeof(DTYPE), copykind);
     return winfos.Nr*winfos.Nc;
 }
 
 /// Method : set the class image
 void Wavelets::set_image(DTYPE* img, int mem_is_on_device) { // There are no memory check !
-    cudaMemcpyKind copykind;
-    if (mem_is_on_device) copykind = cudaMemcpyDeviceToDevice;
-    else copykind = cudaMemcpyHostToDevice;
+    cudaMemcpyKind copykind = mem_is_on_device ?
+        cudaMemcpyDeviceToDevice : cudaMemcpyHostToDevice;
     cudaMemcpy(d_image, img, winfos.Nr*winfos.Nc*sizeof(DTYPE), copykind);
     state = W_INIT;
 }
 
 
 /// Method : set a coefficient
-void Wavelets::set_coeff(DTYPE* coeff, int num, int mem_is_on_device) { // There are no memory check !
-    cudaMemcpyKind copykind;
-    if (mem_is_on_device) copykind = cudaMemcpyDeviceToDevice;
-    else copykind = cudaMemcpyHostToDevice;
+void Wavelets::set_coeff(DTYPE* coeff, int num, int mem_is_on_device) { // There are no memory check !    
     int Nr2 = winfos.Nr, Nc2 = winfos.Nc;
     if (winfos.ndims == 2) {
         // In 2D, num stands for the following:
@@ -464,6 +460,8 @@ void Wavelets::set_coeff(DTYPE* coeff, int num, int mem_is_on_device) { // There
             w_div2(&Nc2);
         }
     }
+    cudaMemcpyKind copykind = mem_is_on_device ?
+        cudaMemcpyDeviceToDevice : cudaMemcpyHostToDevice;
     cudaMemcpy(d_coeffs[num], coeff, Nr2*Nc2*sizeof(DTYPE), copykind);
     //~ state = W_FORWARD; // ?
 }
@@ -500,7 +498,8 @@ int Wavelets::get_coeff(DTYPE* coeff, int num,int to_device) {
         }
     }
     //~ printf("Retrieving %d (%d x %d)\n", num, Nr2, Nc2);
-    cudaMemcpyKind copykind = to_device ? cudaMemcpyDeviceToDevice : cudaMemcpyDeviceToHost;
+    cudaMemcpyKind copykind = to_device ?
+        cudaMemcpyDeviceToDevice : cudaMemcpyDeviceToHost;
     cudaMemcpy(coeff, d_coeffs[num], Nr2*Nc2*sizeof(DTYPE), copykind);
     return Nr2*Nc2;
 }

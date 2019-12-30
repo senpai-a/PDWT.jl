@@ -39,7 +39,7 @@ class Wavelets {
     // Default constructor
     Wavelets();
     // Constructor : Wavelets from image
-    Wavelets(DTYPE* img, int Nr, int Nc, const char* wname, int levels, int memisonhost=1, int do_separable=1, int do_cycle_spinning=0, int do_swt=0, int ndim=2);
+    Wavelets(DTYPE* img, int Nr, int Nc, const char* wname, int levels, int mem_on_device=0, int do_separable=1, int do_cycle_spinning=0, int do_swt=0, int ndim=2);
     // Constructor: copy
     Wavelets(const Wavelets &W);// Pass by non-const reference ONLY if the function will modify the parameter and it is the intent to change the caller's copy of the data
     // Constructor : Wavelets from coeffs
