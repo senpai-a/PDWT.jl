@@ -418,8 +418,9 @@ DTYPE Wavelets::norm1(void) {
 }
 
 /// Method : get the image from device
-int Wavelets::get_image(DTYPE* res) { // TODO: more defensive
-    cudaMemcpy(res, d_image, winfos.Nr*winfos.Nc*sizeof(DTYPE), cudaMemcpyDeviceToHost);
+int Wavelets::get_image(DTYPE* res,int to_device) { // TODO: more defensive
+    cudaMemcpyKind copykind = to_device ? cudaMemcpyDeviceToDevice : cudaMemcpyDeviceToHost;
+    cudaMemcpy(res, d_image, winfos.Nr*winfos.Nc*sizeof(DTYPE), copykind);
     return winfos.Nr*winfos.Nc;
 }
 
@@ -467,12 +468,8 @@ void Wavelets::set_coeff(DTYPE* coeff, int num, int mem_is_on_device) { // There
     //~ state = W_FORWARD; // ?
 }
 
-
-
-
-
 /// Method : get a coefficient vector from device
-int Wavelets::get_coeff(DTYPE* coeff, int num) {
+int Wavelets::get_coeff(DTYPE* coeff, int num,int to_device) {
     if (state == W_INVERSE) {
         puts("Warning: get_coeff(): inverse() has been performed, the coefficients has been modified and do not make sense anymore.");
         return 0;
@@ -503,42 +500,8 @@ int Wavelets::get_coeff(DTYPE* coeff, int num) {
         }
     }
     //~ printf("Retrieving %d (%d x %d)\n", num, Nr2, Nc2);
-    cudaMemcpy(coeff, d_coeffs[num], Nr2*Nc2*sizeof(DTYPE), cudaMemcpyDeviceToHost); //TODO: handle DeviceToDevice ?
-    return Nr2*Nc2;
-}
-
-int Wavelets::get_coeff_d(DTYPE* coeff, int num) {
-    if (state == W_INVERSE) {
-        puts("Warning: get_coeff(): inverse() has been performed, the coefficients has been modified and do not make sense anymore.");
-        return 0;
-    }
-    int Nr2 = winfos.Nr, Nc2 = winfos.Nc;
-    if (winfos.ndims == 2) {
-        // In 2D, num stands for the following:
-        // A  H1 V1 D1  H2 V2 D2
-        // 0  1  2  3   4  5  6
-        // for num>0,  1+(num-1)/3 tells the scale number
-        int scale;
-        if (num == 0) scale = winfos.nlevels;
-        else scale = ((num-1)/3) +1;
-        if (!winfos.do_swt) for (int i = 0; i < scale; i++) {
-            w_div2(&Nr2);
-            w_div2(&Nc2);
-        }
-    }
-    else if (winfos.ndims == 1) {
-        // In 1D, num stands for the following:
-        // A  D1 D2 D3
-        // 0  1  2  3
-        int scale;
-        if (num == 0) scale = winfos.nlevels;
-        else scale = num;
-        if (!winfos.do_swt) for (int i = 0; i < scale; i++) {
-            w_div2(&Nc2);
-        }
-    }
-    //~ printf("Retrieving %d (%d x %d)\n", num, Nr2, Nc2);
-    cudaMemcpy(coeff, d_coeffs[num], Nr2*Nc2*sizeof(DTYPE), cudaMemcpyDeviceToDevice);
+    cudaMemcpyKind copykind = to_device ? cudaMemcpyDeviceToDevice : cudaMemcpyDeviceToHost;
+    cudaMemcpy(coeff, d_coeffs[num], Nr2*Nc2*sizeof(DTYPE), copykind);
     return Nr2*Nc2;
 }
 

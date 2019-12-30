@@ -62,10 +62,9 @@ class Wavelets {
     void inverse();
     DTYPE norm2sq();
     DTYPE norm1();
-    int get_image(DTYPE* img);
+    int get_image(DTYPE* img, int to_device);
     void print_informations();
-    int get_coeff(DTYPE* coeff, int num);
-    int get_coeff_d(DTYPE* coeff, int num);
+    int get_coeff(DTYPE* coeff, int num, int to_device);
     void set_image(DTYPE* img, int mem_is_on_device = 0);
     void set_coeff(DTYPE* coeff, int num, int mem_is_on_device = 0);
     int set_filters_forward(char* filtername, uint len, DTYPE* filter1, DTYPE* filter2, DTYPE* filter3 = NULL, DTYPE* filter4 = NULL);
