@@ -65,6 +65,7 @@ class Wavelets {
     int get_image(DTYPE* img);
     void print_informations();
     int get_coeff(DTYPE* coeff, int num);
+    int get_coeff_d(DTYPE* coeff, int num);
     void set_image(DTYPE* img, int mem_is_on_device = 0);
     void set_coeff(DTYPE* coeff, int num, int mem_is_on_device = 0);
     int set_filters_forward(char* filtername, uint len, DTYPE* filter1, DTYPE* filter2, DTYPE* filter3 = NULL, DTYPE* filter4 = NULL);

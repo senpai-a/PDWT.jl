@@ -507,7 +507,40 @@ int Wavelets::get_coeff(DTYPE* coeff, int num) {
     return Nr2*Nc2;
 }
 
-
+int Wavelets::get_coeff_d(DTYPE* coeff, int num) {
+    if (state == W_INVERSE) {
+        puts("Warning: get_coeff(): inverse() has been performed, the coefficients has been modified and do not make sense anymore.");
+        return 0;
+    }
+    int Nr2 = winfos.Nr, Nc2 = winfos.Nc;
+    if (winfos.ndims == 2) {
+        // In 2D, num stands for the following:
+        // A  H1 V1 D1  H2 V2 D2
+        // 0  1  2  3   4  5  6
+        // for num>0,  1+(num-1)/3 tells the scale number
+        int scale;
+        if (num == 0) scale = winfos.nlevels;
+        else scale = ((num-1)/3) +1;
+        if (!winfos.do_swt) for (int i = 0; i < scale; i++) {
+            w_div2(&Nr2);
+            w_div2(&Nc2);
+        }
+    }
+    else if (winfos.ndims == 1) {
+        // In 1D, num stands for the following:
+        // A  D1 D2 D3
+        // 0  1  2  3
+        int scale;
+        if (num == 0) scale = winfos.nlevels;
+        else scale = num;
+        if (!winfos.do_swt) for (int i = 0; i < scale; i++) {
+            w_div2(&Nc2);
+        }
+    }
+    //~ printf("Retrieving %d (%d x %d)\n", num, Nr2, Nc2);
+    cudaMemcpy(coeff, d_coeffs[num], Nr2*Nc2*sizeof(DTYPE), cudaMemcpyDeviceToDevice);
+    return Nr2*Nc2;
+}
 
 /// Method : give some informations on the wavelet
 void Wavelets::print_informations() {

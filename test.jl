@@ -1,8 +1,6 @@
 using Images
 using CuArrays
 using CUDAdrv
-include("../cameraFingerprint/rwt.jl")
-using .rwt
 
 function dwt1(mat::AbstractArray{Float32,2},wavelet::String,L::Int)
 	m,n = size(mat)
@@ -52,14 +50,6 @@ matd = CuArray(mat)
 Gray.(mat)
 m,n = size(mat)
 
-Gray.(rwt.dwt(Float64.(mat),wavelet["DB8"],2))
-
 specd = dwt1(matd,"db8",2)
 spec = dwt1(mat,"db8",2)
-Gray.(coeff(specd,(m,n)))
-
-bar = Gray.(rwt.dwt(Float64.(mat),wavelet["DB8"],2))
-
-save("lennaCoeff.png",foo)
-save("lennaCoeffrwt.png",bar)
-save("lennagray.png",Gray.(mat))
+Gray.(coeff(Array(specd),(m,n)))
