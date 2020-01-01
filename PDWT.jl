@@ -111,6 +111,9 @@ function idwt(bands::Vector{<:CuArray{Float32,2}},wavelet::String)
 end
 
 #the following are drafts for testing
+# A  H1 V1 D1  H2 V2 D2
+# 1  2  3  4   5  6  7
+# 0  1  2  3   4  5  6
 function coeff(spec,size)
 	m,n = size
 	ret = Array{Float32,2}(undef,m,n)
@@ -128,33 +131,30 @@ function showcoeff(s,size)
 	Gray.(coeff(Array.(s),size))
 end
 
-function copyimg(mat)
+function copyimg(mat::Array)
 	ret = similar(mat)
 	m,n = size(mat)
-	d = isa(mat,CuArray) ? 1 : 0
 	ccall((:copyImage,:libpdwt),
-		Cvoid,(PtrOrCuPtr{Cfloat},PtrOrCuPtr{Cfloat},Cint,Cint,Cint,Cint),
-		mat,ret,m,n,d,d)
+		Cvoid,(Ptr{Cfloat},Ptr{Cfloat},Cint,Cint,Cint,Cint),
+		mat,ret,m,n,0,0)
 	ret
 end
-
-"""
 function copyimg(mat::CuArray)
 	ret = similar(mat)
 	m,n = size(mat)
-	d = isa(mat,CuArray) ? 1 : 0
 	ccall((:copyImage,:libpdwt),
 		Cvoid,(CuPtr{Cfloat},CuPtr{Cfloat},Cint,Cint,Cint,Cint),
-		mat.ptr,ret.ptr,m,n,d,d)
+		mat.ptr,ret.ptr,m,n,1,1)
 	ret
 end
-"""
 
 function copycoeff(spec,m,n)
 	ret = similar(spec)
 	for i in 1:length(spec) ret[i]=similar(spec[i]) end
 	lvl = (length(spec)-1)÷3
 	d = isa(spec[1],CuArray) ? 1 : 0
+	#specp = [pointer(s,1) for s in spec]
+	#retp = [pointer(r,1) for r in ret]
 	ccall((:copyCoeff,:libpdwt),
 		Cvoid,(Ptr{Ptr{Cfloat}},Ptr{Ptr{Cfloat}},Cint,Cint,Cint,Cint,Cint),
 		spec,ret,m,n,lvl,d,d)
@@ -164,12 +164,14 @@ end
 function copycoeff(spec::Vector{<:CuArray},m,n)
 	ret = similar(spec)
 	for i in 1:length(spec) ret[i]=similar(spec[i])
-	println(summary(ret[i])) end
+		println(summary(ret[i]))
+	end
 	println(summary(ret))
 	lvl = (length(spec)-1)÷3
 	d = 1
 	specp = CuPtr{Float32}[spec[i].ptr for i in 1:length(spec)]
 	retp = CuPtr{Float32}[ret[i].ptr for i in 1:length(ret)]
+
 	ccall((:copyCoeff,:libpdwt),
 		Cvoid,(Ptr{CuPtr{Cfloat}},Ptr{CuPtr{Cfloat}},Cint,Cint,Cint,Cint,Cint),
 		specp,retp,m,n,lvl,d,d)
@@ -181,6 +183,7 @@ pwd()
 mat = Float32.(Gray.(load("lenna.png")))
 matd = CuArray(mat)
 Gray.(Array(matd))
+Gray.(Array(mat))
 m,n = size(mat)
 siz = (m,n)
 sd = Vector{CuArray}(undef,7)
@@ -195,27 +198,16 @@ s = Array.(sd)
 showcoeff(s,siz)
 showcoeff(sd,siz)
 
-cs =copycoeff(s,m,n)
-csd = copycoeff(sd,m,n)
-showcoeff(cs,siz)
-showcoeff(csd,siz)
+cs =copycoeff(s,m,n);showcoeff(cs,siz)
+csd = copycoeff(sd,m,n);showcoeff(csd,siz)
 
+cmatd=copyimg(matd);Gray.(Array(cmatd))
+cmat=copyimg(mat);Gray.(cmat)
 
-cmatd=copyimg(matd)
-Gray.(Array(cmatd))
-cmat=copyimg(mat)
-Gray.(cmat)
-
-spec = dwt(copy(mat),"db8",2)
-Gray.(spec[1])
-showcoeff(spec,siz)
+spec = dwt(copy(mat),"db8",2);showcoeff(spec,siz)
 
 specd = dwt(matd,"db8",2);Gray.(coeff(Array.(specd),(m,n)))
 
-imgd = idwt(CuArray.(spec),"db8")
-Gray.(Array(imgd))
-
-img = idwt(spec,"db8")
-Gray.(img)
-
+img = idwt(spec,"db8");Gray.(img)
+imgd = idwt(CuArray.(spec),"db8");Gray.(Array(imgd))
 end#module PDWT

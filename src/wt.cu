@@ -470,7 +470,7 @@ void Wavelets::set_coeff(DTYPE* coeff, int num, int mem_is_on_device) { // There
 int Wavelets::get_coeff(DTYPE* coeff, int num,int to_device) {
     if (state == W_INVERSE) {
         puts("Warning: get_coeff(): inverse() has been performed, the coefficients has been modified and do not make sense anymore.");
-        return 0;
+        //return 0;
     }
     int Nr2 = winfos.Nr, Nc2 = winfos.Nc;
     if (winfos.ndims == 2) {
